@@ -135,7 +135,7 @@ failure above it rather than blanking the panel.
 ```sh
 npm install                 # esbuild only, pinned exactly
 npm run build               # rebuild lib/client.js
-npm test                    # 19 cases across three layers
+npm test                    # 27 cases across three layers
 npm run verify:build        # rebuild + fail if lib/ is stale (what CI runs)
 ```
 

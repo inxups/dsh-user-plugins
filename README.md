@@ -139,7 +139,7 @@ npm install                 # 只装 esbuild（精确锁版本）
 # 改完浏览器半边后重新构建
 npm run build
 
-# 三层测试（19 个用例：host / client / 端到端）
+# 三层测试（27 个用例：host 13 / client 12 / 端到端 2）
 npm test
 
 # 重建并检查产物是否与源码脱节（CI 跑的就是这条）
