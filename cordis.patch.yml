@@ -1,0 +1,11 @@
+# dsh-user-plugins bundle patch: inserts the host row into the profile's plugin
+# roster. The browser half rides this package's `dsh.client` manifest — the
+# client registry serves lib/client.js under this package name — and this row
+# materializes the host half that owns the /dsh-user-plugins/api route.
+#
+# Install with `dsh plugin --profile <name> add <path-or-git-url>`; the bundle
+# patch is applied automatically, so do NOT insert this row again in the
+# profile patch (duplicate ids crash the loader).
+- insert:
+    - id: dsh-user-plugins
+      name: 'dsh-user-plugins'

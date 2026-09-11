@@ -1,0 +1,58 @@
+{
+  "name": "dsh-user-plugins",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A dsh web GUI panel that lists the plugins you installed into your dsh profiles, with install spec, version, kind, and live loader phase.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "README.en.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/host.test.mjs tests/client.test.mjs tests/integration.test.mjs",
+    "verify:build": "node scripts/build.mjs && git diff --exit-code -- lib/"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "cordis",
+    "web-ui",
+    "settings"
+  ],
+  "author": "inxups",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inxups/dsh-user-plugins.git"
+  },
+  "homepage": "https://github.com/inxups/dsh-user-plugins#readme",
+  "bugs": {
+    "url": "https://github.com/inxups/dsh-user-plugins/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.1"
+  }
+}

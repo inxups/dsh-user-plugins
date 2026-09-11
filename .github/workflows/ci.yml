@@ -1,0 +1,52 @@
+name: CI
+
+# Two guarantees, in this order:
+#   1. the committed client bundle matches what the current source builds —
+#      the whole point of committing lib/ is that installs need no build step,
+#      which only holds if the artifact never drifts from its source;
+#   2. the three test layers pass (host, client, end-to-end).
+#
+# The third-party plugins the integration layer reads (~/.dsh/profiles/*) are
+# absent on CI, so those two cases skip themselves by design; everything else
+# runs with no dsh installation and no runtime dependencies.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20, 22]
+    name: node ${{ matrix.node-version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      # Only devDependencies (esbuild, pinned exactly). No runtime deps exist.
+      - name: Install build tooling
+        run: npm install --no-audit --no-fund
+
+      - name: Rebuild the client bundle
+        run: node scripts/build.mjs
+
+      - name: Fail if the committed bundle is stale
+        run: |
+          if ! git diff --exit-code -- lib/; then
+            echo "::error::lib/ does not match the current source — run 'npm run build' and commit the result."
+            exit 1
+          fi
+
+      - name: Test
+        run: npm test
