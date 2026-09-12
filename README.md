@@ -50,40 +50,6 @@ dsh-user-plugins/
 host 半边零运行时依赖（只用 `node:fs` / `node:path`）。浏览器半边只用平台模块
 （`react` + `@deepseek-ai/dsh-client-ui-primitives`），不引入任何第三方 UI 库。
 
-## 多语言
-
-文案全部走本插件自己的 locale 命名空间 **`settings.userPlugins`**，提供中文与英文两套
-字典，没有硬编码prose。切换 GUI 语言时标签标题和面板内容都会实时跟随：
-
-```ts
-ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'dsh-user-plugins: dictionaries')
-const t = ctx.locale.bind(NS)
-
-ctx.slots.register({
-  name: 'settings.plugins.tab',
-  id: 'user-installed',
-  label: () => t('tab'),   // thunk：每次读取都重新求值 → 跟随当前语言
-  locale: NS,              // 把框架合成的 t 座位放到组件 props 上
-}, UserPluginsTab)
-```
-
-两个机制各自负责一半：
-
-- **标签标题**：`label` 传 thunk 而非字符串 —— slot 层记录的是 `SlotLabel = string | (() => string)`，
-  每次读取都重新调用，所以**不需要重注册**就能跟随语言切换。
-- **面板内容**：注册时声明 `locale: NS`，框架把 `t` 注入组件 props；渲染器已把每个
-  outlet 订阅到 locale revision，因此切换语言会整片重渲染。
-
-字典维护约定（`locales.ts`）：
-
-- `zh` 是**键的唯一来源**，写成 `satisfies Record<string, string>`。
-- `en` 写成 `satisfies Record<UserPluginsLocaleKey, string>` —— 在带类型检查的消费方那里，
-  漏译会编译失败。
-- 本包的发布产物由 esbuild 直出、**不经过类型检查**，所以 `tests/client.test.mjs` 在运行时
-  再兜一层：断言 en 的键集与 zh 完全一致、无空翻译、且每个 `{placeholder}` 与中文源一致
-  （占位符漏写会渲染出原始 `{count}`）。
-- 英文缺失时的兜底链由 locale 服务提供（en 是链尾）。
-
 ## 界面
 
 标签页的控件全部来自平台自带的 UI 原子，因此和 GUI 其余部分共用同一套设计 token，
@@ -109,49 +75,6 @@ dsh plugin --profile web add /绝对路径/dsh-user-plugins
 （因为它声明了 `dsh.bundle`）。之后**重启 dsh** 让新插件进入组合。
 
 若从源码运行，把上面的 `dsh` 换成 `pnpm dsh`。
-
-## 为什么提交构建产物
-
-`lib/client.js` 是构建产物，**且刻意入库**。
-
-`dsh plugin add <git-url>` 时 pnpm 是**克隆仓库**，本包没有 `prepare` 脚本，消费者机器上不会
-构建任何东西；而 `package.json` 的 `main` / `exports` 指向 `lib/`。不提交产物，装下来的就是个
-用不了的包。
-
-「改为安装时构建」可行但有实打实的代价，以下是针对 pnpm 11 的实测结论：
-
-- pnpm 默认阻止 git 依赖执行构建脚本（`ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED`）。
-- `allowBuilds` 白名单要求 **`包名@git URL#commit SHA`** 的完整形式，只写包名会被拒绝。于是
-  每个消费者都得手改自己 profile 的 `pnpm-workspace.yaml`，而且**每推一个新 commit 就失效一次**。
-
-提交产物绕开了这一切。它唯一的风险是「产物与源码脱节」，由 CI 兜住：CI 重新构建，若 `lib/`
-有差异就失败。本地跑同一条检查：
-
-```sh
-npm run verify:build
-```
-
-## 开发
-
-```sh
-npm install                 # 只装 esbuild（精确锁版本）
-
-# 改完浏览器半边后重新构建
-npm run build
-
-# 三层测试（27 个用例：host 13 / client 12 / 端到端 2）
-npm test
-
-# 重建并检查产物是否与源码脱节（CI 跑的就是这条）
-npm run verify:build
-```
-
-没有本地安装时，构建也会从 DSH 检出里找 esbuild —— 设 `DSH_SOURCE` 指向检出根目录，或
-`DSH_ESBUILD` 指向具体的 esbuild 路径。
-
-`lib/client.js` 必须按包名注册（`window.__ModuleLoader__.load({ id: '<包名>' })`），
-否则客户端会报 `loaded without registering`。`scripts/build.mjs` 从 `package.json`
-读取 `name` 作为 id，所以改包名不需要改构建脚本。
 
 ## 数据与接口
 
